@@ -1,3 +1,8 @@
+#读SQLalchemy的official manual，确认dbsession的各种用法（current task）；
+#确认process_param_data部分zip的使用、snapshot的匹配方式是否正确；
+#svid在SECS driver存入的格式（list），以及排列对stepparameter表匹配录入逻辑的影响
+
+
 import logging
 import asyncio
 import nats
