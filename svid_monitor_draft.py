@@ -306,12 +306,12 @@ def process_param_data(snapshot: tuple[ParamSVIDPair, ...], payload: EventPayloa
     # payload.rptid -> Report ID, 来自机台，根据CEID决定（匹配机台给出的RPID:10001/10002）
     # payload.params -> rpt["V"]的对应值，对应 ParamSVIDMap表中的svid
 
-    # 2. 查询对应的chamber_name
+    # 查询对应的chamber_name
     # 默认一个进程对应一个机台/TM号，用docker.compose多个脚本监控不同机台
     tm_alias = (EQUIPMENT).strip()
     chamber_name = resolve_chamber_name(tm_alias, payload.chamber)
 
-    # 3. 解析 rpt["V"],读取前四个默认字段
+    # 解析 rpt["V"],读取前四个默认字段
     _, step_name_raw, lot_no_raw, _ = payload.params[:4]
     # _, _, step_name_raw, lot_no_raw = payload.params[:4]
     step_name = str(step_name_raw).strip()
