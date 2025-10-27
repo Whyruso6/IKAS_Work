@@ -173,7 +173,7 @@ async def monitor_param_svid_map(interval: float = 60.0):
     功能函数，每 30(interval) 秒检查一次 ParamSVIDMap表，
     有任何变更就启动update_and_restart
     """
-    # 每30秒建立一个snapshot当做checkpoint
+    
     last_snapshot: tuple[ParamSVIDPair, ...] = tuple()
 
     while True:
@@ -185,10 +185,8 @@ async def monitor_param_svid_map(interval: float = 60.0):
                 await update_and_restart(snapshot)
                 last_snapshot = snapshot  # 设为新checkpoint
                 logger.info("ParamSVIDMap已更新，配置初始化")
-        # Error handler
         except Exception as exc:
             logger.error("param_svid_map monitor error: %s", exc, exc_info=True)
-        # 每30（interval)秒后重新判定
         finally:
             db.session.rollback()
         await asyncio.sleep(interval)
@@ -206,19 +204,18 @@ async def update_and_restart(snapshot: tuple[ParamSVIDPair, ...]):
     """
     global _listener_task
 
-    # 1) 停掉正在运行的 listener_main
-    # 若listener_main任务正在运行/未结束
+    # 停止正在运行的 listener_main
     if _listener_task and not _listener_task.done():
-        _listener_task.cancel()  # 请求取消lister_main任务
+        _listener_task.cancel()
         try:
-            await _listener_task  # 等待listener_main确实取消
+            await _listener_task
         except asyncio.CancelledError:
             pass  # 让计划中的listener_main停止不报错
 
-    # 2)将snapshot发给init_default_from_snapshot,初始化机台
+    # 将snapshot发给init_default_from_snapshot,初始化机台
     # re_init_with_snapshot(snapshot)
 
-    # 3) 重启 listener_main
+    # 重启 listener_main，同时发送snapshot
     _listener_task = asyncio.create_task(listener_main(snapshot))
     logger.info("Restarting listener post reinitialisation.")
 
@@ -302,9 +299,6 @@ def process_param_data(snapshot: tuple[ParamSVIDPair, ...], payload: EventPayloa
     """
     将每个工步上抛的paramter数据，写入 StepParameter的表
     """
-    # payload.chamber -> PM1/PM2，根据机台发出的CEID决定（匹配机台给出的CEID)
-    # payload.rptid -> Report ID, 来自机台，根据CEID决定（匹配机台给出的RPID:10001/10002）
-    # payload.params -> rpt["V"]的对应值，对应 ParamSVIDMap表中的svid
 
     # 查询对应的chamber_name
     # 默认一个进程对应一个机台/TM号，用docker.compose多个脚本监控不同机台
@@ -317,7 +311,7 @@ def process_param_data(snapshot: tuple[ParamSVIDPair, ...], payload: EventPayloa
     step_name = str(step_name_raw).strip()
     lot_no = str(lot_no_raw).strip()
 
-    # 配对ParamSVIDMap-pm_alias和机台发送的chamber(zip方式),
+    # 配对ParamSVIDMap-pm_alias和机台发送的chamber(?zip方式),
     # rpt["V"]第五位的值 -> payload.param[4])为value,
     # 形成{param_name:value}, 录入parameters
     parameters: dict[str, object] = {}
@@ -342,7 +336,7 @@ def process_param_data(snapshot: tuple[ParamSVIDPair, ...], payload: EventPayloa
     )
 
 
-# ===============================================SECS驱动列表更新=====================================================
+# ===============================================SECS驱动列表更新(开发中，未实现）=====================================================
 @blp.cli.command("pull-svid")
 def start_getter():
     start_timestamp = time.time()
