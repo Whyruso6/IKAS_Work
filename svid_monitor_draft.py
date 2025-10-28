@@ -2,7 +2,7 @@
 #已实现：
 #读SQLalchemy的official manual，确认dbsession的各种用法（current reading task）；
 #确认process_param_data部分zip的使用，svid在SECS driver存入的格式（list），以及排列对stepparameter表匹配录入逻辑的影响
-->已确认，需要根据SECS driver和param2svid表的re-init svid list顺序决定
+#->已确认，需要根据SECS driver和param2svid表的re-init svid list顺序决定
 
 import logging
 import asyncio
