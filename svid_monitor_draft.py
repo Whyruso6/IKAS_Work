@@ -1,8 +1,10 @@
-#新任务：确认re_init_with_snapshot函数及实现相关（SECS驱动列表更新）功能
-#已实现：
+#新任务：
+#确认re_init_with_snapshot函数及实现相关（SECS驱动列表更新）功能
+#正在做：
 #读SQLalchemy的official manual，确认dbsession的各种用法（current reading task）；
-#确认process_param_data部分zip的使用，svid在SECS driver存入的格式（list），以及排列对stepparameter表匹配录入逻辑的影响
-#->已确认，需要根据SECS driver和param2svid表的re-init svid list顺序决定
+#已确认/实现：
+#process_param_data部分zip的使用，svid在SECS driver存入的格式（list），以及排列对stepparameter表匹配录入逻辑的影响
+#->已确认逻辑，需要根据SECS driver svid list和param2svid表的mapping顺序决定key和value的layout
 
 import logging
 import asyncio
@@ -312,14 +314,16 @@ def process_param_data(snapshot: tuple[ParamSVIDPair, ...], payload: EventPayloa
     chamber_name = resolve_chamber_name(tm_alias, payload.chamber)
 
     # 解析 rpt["V"],读取前四个默认字段
+    # Need to testout current layout for the default [4:]
     _, step_name_raw, lot_no_raw, _ = payload.params[:4]
     # _, _, step_name_raw, lot_no_raw = payload.params[:4]
     step_name = str(step_name_raw).strip()
     lot_no = str(lot_no_raw).strip()
 
-    # 配对ParamSVIDMap-pm_alias和机台发送的chamber(?zip方式),
-    # rpt["V"]第五位的值 -> payload.param[4])为value,
-    # 形成{param_name:value}, 录入parameters
+    # 配对ParamSVIDMap-pm_alias和机台发送的chamber,
+    # rpt["V"]第五位以后的值 -> payload.param[4:])为value,
+    # trim掉param_name行前四个letter(PM1/|PM2/)
+    # 形成{param_name:value}, 录入表中parameters列
     parameters: dict[str, object] = {}
     for row, value in zip(snapshot, payload.params[4:]):
         param_name = row.param
